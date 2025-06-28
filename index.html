@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUSHI Data Harvester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .input-method {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .radio-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .radio-button input[type="radio"] {
+            cursor: pointer;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover .file-upload-label {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: monospace;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-bar-bg {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.2) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.2) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 30px 30px;
+            animation: progress-bar-stripes 1s linear infinite;
+        }
+
+        @keyframes progress-bar-stripes {
+            0% { background-position: 0 0; }
+            100% { background-position: 30px 0; }
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .eta-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .results.error {
+            background: #ffebee;
+        }
+
+        .download-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .download-link:hover {
+            text-decoration: underline;
+        }
+
+        .help-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SUSHI Data Harvester</h1>
+        <p class="subtitle">Bulk harvest usage data from multiple accounts efficiently</p>
+
+        <form id="harvestForm">
+            <div class="row">
+                <div class="form-section">
+                    <label for="format">Report Format</label>
+                    <select id="format" name="format" required>
+                        <option value="5">Format 5</option>
+                        <option value="5.1">Format 5.1</option>
+                    </select>
+                </div>
+
+                <div class="form-section">
+                    <label for="reportType">Report Type</label>
+                    <select id="reportType" name="reportType" required>
+                        <option value="tr_j1">TR_J1</option>
+                        <option value="tr_j2">TR_J2</option>
+                        <option value="tr_j3">TR_J3</option>
+                        <option value="tr_j4">TR_J4</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-section">
+                    <label for="beginDate">Begin Date</label>
+                    <input type="date" id="beginDate" name="beginDate" required>
+                </div>
+
+                <div class="form-section">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate" name="endDate" required>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label>Account Input Method</label>
+                <div class="input-method">
+                    <div class="radio-button">
+                        <input type="radio" id="manual" name="inputMethod" value="manual" checked>
+                        <label for="manual">Manual Input</label>
+                    </div>
+                    <div class="radio-button">
+                        <input type="radio" id="upload" name="inputMethod" value="upload">
+                        <label for="upload">Upload CSV/TSV</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="manualInput" class="form-section">
+                <label for="accounts">Account Details</label>
+                <textarea id="accounts" name="accounts" placeholder="Enter one account per line: requestor_id,customer_id&#10;Example:&#10;admin@example.com,CUST001&#10;admin2@example.com,CUST002"></textarea>
+                <p class="help-text">Format: requestor_id,customer_id (one per line)</p>
+            </div>
+
+            <div id="fileInput" class="form-section" style="display: none;">
+                <label>Upload CSV/TSV File</label>
+                <div class="file-upload">
+                    <input type="file" id="file" name="file" accept=".csv,.tsv,.txt">
+                    <label for="file" class="file-upload-label">
+                        <span id="fileName">Click to choose file or drag and drop</span>
+                    </label>
+                </div>
+                <p class="help-text">File should contain requestor_id and customer_id columns</p>
+            </div>
+
+            <button type="submit" class="button" id="submitButton">Submit Request</button>
+        </form>
+
+        <div class="progress-container" id="progressContainer">
+            <p class="progress-text"><span id="progressCount">0</span> of <span id="totalCount">0</span> accounts processed</p>
+            <div class="progress-bar-bg">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <p class="eta-text">Estimated time remaining: <span id="eta">calculating...</span></p>
+        </div>
+
+        <div class="results" id="results">
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const WORKER_URL = 'https://sushi-harvester.mhardesty.workers.dev/';
+        
+        // Form elements
+        const form = document.getElementById('harvestForm');
+        const formatSelect = document.getElementById('format');
+        const reportTypeSelect = document.getElementById('reportType');
+        const beginDateInput = document.getElementById('beginDate');
+        const endDateInput = document.getElementById('endDate');
+        const manualRadio = document.getElementById('manual');
+        const uploadRadio = document.getElementById('upload');
+        const manualInputDiv = document.getElementById('manualInput');
+        const fileInputDiv = document.getElementById('fileInput');
+        const accountsTextarea = document.getElementById('accounts');
+        const fileInput = document.getElementById('file');
+        const fileNameSpan = document.getElementById('fileName');
+        const submitButton = document.getElementById('submitButton');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressCount = document.getElementById('progressCount');
+        const totalCount = document.getElementById('totalCount');
+        const etaSpan = document.getElementById('eta');
+        const resultsDiv = document.getElementById('results');
+        const resultsContent = document.getElementById('resultsContent');
+
+        // Toggle input method
+        manualRadio.addEventListener('change', () => {
+            manualInputDiv.style.display = 'block';
+            fileInputDiv.style.display = 'none';
+            fileInput.value = '';
+            fileNameSpan.textContent = 'Click to choose file or drag and drop';
+        });
+
+        uploadRadio.addEventListener('change', () => {
+            manualInputDiv.style.display = 'none';
+            fileInputDiv.style.display = 'block';
+            accountsTextarea.value = '';
+        });
+
+        // File input handling
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileNameSpan.textContent = file.name;
+            }
+        });
+
+        // Parse accounts from manual input or file
+        async function parseAccounts() {
+            const accounts = [];
+            
+            if (manualRadio.checked) {
+                const lines = accountsTextarea.value.trim().split('\n');
+                for (const line of lines) {
+                    const [requestorId, customerId] = line.split(',').map(s => s.trim());
+                    if (requestorId && customerId) {
+                        accounts.push({ requestor_id: requestorId, customer_id: customerId });
+                    }
+                }
+            } else {
+                const file = fileInput.files[0];
+                if (!file) throw new Error('Please select a file');
+                
+                const text = await file.text();
+                const delimiter = file.name.endsWith('.tsv') ? '\t' : ',';
+                const lines = text.trim().split('\n');
+                const headers = lines[0].toLowerCase().split(delimiter).map(h => h.trim());
+                
+                const requestorIndex = headers.findIndex(h => h.includes('requestor'));
+                const customerIndex = headers.findIndex(h => h.includes('customer'));
+                
+                if (requestorIndex === -1 || customerIndex === -1) {
+                    throw new Error('File must contain requestor_id and customer_id columns');
+                }
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(delimiter).map(v => v.trim());
+                    if (values[requestorIndex] && values[customerIndex]) {
+                        accounts.push({
+                            requestor_id: values[requestorIndex],
+                            customer_id: values[customerIndex]
+                        });
+                    }
+                }
+            }
+            
+            if (accounts.length === 0) {
+                throw new Error('No valid accounts found');
+            }
+            
+            return accounts;
+        }
+
+        // Submit form
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                // Parse accounts
+                const accounts = await parseAccounts();
+                
+                // Prepare request data
+                const requestData = {
+                    format: formatSelect.value,
+                    report_type: reportTypeSelect.value,
+                    begin_date: beginDateInput.value,
+                    end_date: endDateInput.value,
+                    accounts: accounts
+                };
+                
+                // Show progress
+                progressContainer.style.display = 'block';
+                resultsDiv.style.display = 'none';
+                submitButton.disabled = true;
+                totalCount.textContent = accounts.length;
+                progressCount.textContent = '0';
+                progressBar.style.width = '0%';
+                
+                // Start timer for ETA calculation
+                const startTime = Date.now();
+                let processedCount = 0;
+                
+                // Create EventSource for server-sent events
+                const eventSource = new EventSource(`${WORKER_URL}/harvest?data=${encodeURIComponent(JSON.stringify(requestData))}`);
+                
+                eventSource.addEventListener('progress', (event) => {
+                    const data = JSON.parse(event.data);
+                    processedCount = data.processed;
+                    progressCount.textContent = processedCount;
+                    progressBar.style.width = `${(processedCount / accounts.length) * 100}%`;
+                    
+                    // Calculate ETA
+                    if (processedCount > 0) {
+                        const elapsed = Date.now() - startTime;
+                        const averageTime = elapsed / processedCount;
+                        const remaining = (accounts.length - processedCount) * averageTime;
+                        const seconds = Math.ceil(remaining / 1000);
+                        
+                        if (seconds < 60) {
+                            etaSpan.textContent = `${seconds} seconds`;
+                        } else {
+                            const minutes = Math.ceil(seconds / 60);
+                            etaSpan.textContent = `${minutes} minute${minutes > 1 ? 's' : ''}`;
+                        }
+                    }
+                });
+                
+                eventSource.addEventListener('complete', async (event) => {
+                    const data = JSON.parse(event.data);
+                    eventSource.close();
+                    
+                    // Hide progress, show results
+                    progressContainer.style.display = 'none';
+                    resultsDiv.style.display = 'block';
+                    resultsDiv.classList.remove('error');
+                    submitButton.disabled = false;
+                    
+                    if (data.downloadId) {
+                        resultsContent.innerHTML = `
+                            <h3>✅ Harvest Complete!</h3>
+                            <p>Successfully processed ${data.successful} out of ${accounts.length} accounts.</p>
+                            ${data.failed > 0 ? `<p>⚠️ ${data.failed} accounts failed to process.</p>` : ''}
+                            <a href="${WORKER_URL}/download/${data.downloadId}" class="download-link" download="aggregated_data.csv">
+                                📥 Download Results (CSV)
+                            </a>
+                        `;
+                    } else {
+                        throw new Error('No download ID received');
+                    }
+                });
+                
+                eventSource.addEventListener('error', (event) => {
+                    eventSource.close();
+                    throw new Error('Connection lost');
+                });
+                
+            } catch (error) {
+                // Show error
+                progressContainer.style.display = 'none';
+                resultsDiv.style.display = 'block';
+                resultsDiv.classList.add('error');
+                submitButton.disabled = false;
+                
+                resultsContent.innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        });
+
+        // Set default dates (current month)
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        beginDateInput.value = firstDay.toISOString().split('T')[0];
+        endDateInput.value = lastDay.toISOString().split('T')[0];
+    </script>
+</body>
+</html>
