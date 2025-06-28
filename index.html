@@ -258,6 +258,22 @@
             margin-top: 5px;
         }
 
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @media (max-width: 600px) {
             .row {
                 grid-template-columns: 1fr;
@@ -346,7 +362,10 @@
         </form>
 
         <div class="progress-container" id="progressContainer">
-            <p class="progress-text"><span id="progressCount">0</span> of <span id="totalCount">0</span> accounts processed</p>
+            <p class="progress-text">
+                <span id="progressCount">0</span> of <span id="totalCount">0</span> accounts processed
+                <span class="loading-spinner" id="spinner"></span>
+            </p>
             <div class="progress-bar-bg">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
@@ -359,7 +378,7 @@
     </div>
 
     <script>
-        // Configuration
+        // Configuration - UPDATE THIS WITH YOUR WORKER URL
         const WORKER_URL = 'https://sushi-harvester.mhardesty.workers.dev';
         
         // Form elements
@@ -452,6 +471,66 @@
             return accounts;
         }
 
+        // Simple processing function
+        async function processAccountsDirectly(requestData) {
+            const results = [];
+            const startTime = Date.now();
+            
+            for (let i = 0; i < requestData.accounts.length; i++) {
+                const account = requestData.accounts[i];
+                
+                try {
+                    // Process one account at a time
+                    const response = await fetch(`${WORKER_URL}/process-single`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            ...requestData,
+                            account: account
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    results.push(...(result.data || []));
+                    
+                } catch (error) {
+                    console.error(`Error processing ${account.customer_id}:`, error);
+                    results.push({
+                        'Institution Name': 'ERROR',
+                        'Title': `Failed: ${error.message}`,
+                        'Customer ID': account.customer_id,
+                        'Requestor ID': account.requestor_id
+                    });
+                }
+                
+                // Update progress
+                const processed = i + 1;
+                progressCount.textContent = processed;
+                progressBar.style.width = `${(processed / requestData.accounts.length) * 100}%`;
+                
+                // Calculate ETA
+                const elapsed = Date.now() - startTime;
+                const averageTime = elapsed / processed;
+                const remaining = (requestData.accounts.length - processed) * averageTime;
+                const seconds = Math.ceil(remaining / 1000);
+                
+                if (seconds < 60) {
+                    etaSpan.textContent = `${seconds} seconds`;
+                } else {
+                    const minutes = Math.ceil(seconds / 60);
+                    etaSpan.textContent = `${minutes} minute${minutes > 1 ? 's' : ''}`;
+                }
+            }
+            
+            return results;
+        }
+
         // Submit form
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -477,63 +556,49 @@
                 progressCount.textContent = '0';
                 progressBar.style.width = '0%';
                 
-                // Start timer for ETA calculation
-                const startTime = Date.now();
-                let processedCount = 0;
-                
-                // Create EventSource for server-sent events
-                const eventSource = new EventSource(`${WORKER_URL}/harvest?data=${encodeURIComponent(JSON.stringify(requestData))}`);
-                
-                eventSource.addEventListener('progress', (event) => {
-                    const data = JSON.parse(event.data);
-                    processedCount = data.processed;
-                    progressCount.textContent = processedCount;
-                    progressBar.style.width = `${(processedCount / accounts.length) * 100}%`;
-                    
-                    // Calculate ETA
-                    if (processedCount > 0) {
-                        const elapsed = Date.now() - startTime;
-                        const averageTime = elapsed / processedCount;
-                        const remaining = (accounts.length - processedCount) * averageTime;
-                        const seconds = Math.ceil(remaining / 1000);
-                        
-                        if (seconds < 60) {
-                            etaSpan.textContent = `${seconds} seconds`;
-                        } else {
-                            const minutes = Math.ceil(seconds / 60);
-                            etaSpan.textContent = `${minutes} minute${minutes > 1 ? 's' : ''}`;
-                        }
-                    }
+                // Try simplified batch processing
+                const response = await fetch(`${WORKER_URL}/harvest-batch`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
                 });
                 
-                eventSource.addEventListener('complete', async (event) => {
-                    const data = JSON.parse(event.data);
-                    eventSource.close();
-                    
-                    // Hide progress, show results
-                    progressContainer.style.display = 'none';
-                    resultsDiv.style.display = 'block';
-                    resultsDiv.classList.remove('error');
-                    submitButton.disabled = false;
-                    
-                    if (data.downloadId) {
-                        resultsContent.innerHTML = `
-                            <h3>✅ Harvest Complete!</h3>
-                            <p>Successfully processed ${data.successful} out of ${accounts.length} accounts.</p>
-                            ${data.failed > 0 ? `<p>⚠️ ${data.failed} accounts failed to process.</p>` : ''}
-                            <a href="${WORKER_URL}/download/${data.downloadId}" class="download-link" download="aggregated_data.csv">
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Hide progress, show results
+                progressContainer.style.display = 'none';
+                resultsDiv.style.display = 'block';
+                resultsDiv.classList.remove('error');
+                submitButton.disabled = false;
+                
+                if (result.downloadId) {
+                    resultsContent.innerHTML = `
+                        <h3>✅ Harvest Complete!</h3>
+                        <p>Successfully processed ${result.successful} out of ${accounts.length} accounts.</p>
+                        ${result.failed > 0 ? `<p>⚠️ ${result.failed} accounts failed to process.</p>` : ''}
+                        ${result.summary ? `
+                        <div style="margin: 15px 0; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                            <h4 style="margin-bottom: 10px;">Summary Statistics</h4>
+                            <p><strong>Total Usage Count:</strong> ${result.summary.totalUsage.toLocaleString()}</p>
+                            <p><strong>Unique Platforms:</strong> ${result.summary.uniquePlatforms}</p>
+                            <p><strong>Metric Types:</strong> ${result.summary.metricTypes.join(', ')}</p>
+                        </div>
+                        ` : ''}
+                        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                            <a href="${WORKER_URL}/download/${result.downloadId}" class="download-link" download="aggregated_data.csv">
                                 📥 Download Results (CSV)
                             </a>
-                        `;
-                    } else {
-                        throw new Error('No download ID received');
-                    }
-                });
-                
-                eventSource.addEventListener('error', (event) => {
-                    eventSource.close();
-                    throw new Error('Connection lost');
-                });
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Processing failed - no download available');
+                }
                 
             } catch (error) {
                 // Show error
@@ -545,7 +610,10 @@
                 resultsContent.innerHTML = `
                     <h3>❌ Error</h3>
                     <p>${error.message}</p>
+                    <p style="margin-top: 10px; font-size: 14px;">Please check the browser console for more details.</p>
                 `;
+                
+                console.error('Processing error:', error);
             }
         });
 
