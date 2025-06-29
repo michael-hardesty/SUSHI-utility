@@ -27,6 +27,12 @@
       margin-bottom: 20px;
       color: #333;
     }
+    p.subhead {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #444;
+        font-weight: 600;
+    }
     label {
       display: block;
       margin-top: 15px;
@@ -141,15 +147,16 @@
 </head>
 <body>
   <div class="container">
-    <h1>SUSHI Data Harvester</h1>
+    <h1>PNAS Bulk COUNTER Data Harvester</h1>
+    <p class="subhead">For the Subscriptions team to gather subscriber COUNTER usage data in bulk.</p>
     <form id="harvestForm">
-      <label>Report Format: <select id="format"><option value="5">5</option><option value="5.1">5.1</option></select></label>
+      <label>COUNTER Version: <select id="format"><option value="5">5</option><option value="5.1">5.1</option></select></label>
       <label>Report Type: <select id="reportType">
-        <option value="tr_j1">TR_J1</option><option value="tr_j2">TR_J2</option>
+        <option value="tr_j1">TR_J1</option><option value="tr_j2">TR_J2</option><option value="tr_j3">TR_J3</option><option value="tr_j4">TR_J4</option>
       </select></label>
       <label>Begin Date: <input type="date" id="beginDate" required /></label>
       <label>End Date: <input type="date" id="endDate" required /></label>
-      <label>Accounts:<br/><textarea id="accounts" rows="5" placeholder="email@domain,customer_id"></textarea></label>
+      <label>Accounts:<br/><textarea id="accounts" rows="5" placeholder="requestor_id,customer_id"></textarea></label>
       <button type="submit">Submit</button>
     </form>
     <div id="progress"></div>
