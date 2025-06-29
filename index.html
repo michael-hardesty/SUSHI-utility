@@ -3,6 +3,83 @@
 <head>
   <meta charset="UTF-8" />
   <title>SUSHI Data Harvester</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 700px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+      color: #444;
+    }
+    select, input[type="date"], textarea, button {
+      width: 100%;
+      margin-top: 8px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #667eea;
+      color: white;
+      font-weight: bold;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #5a67d8;
+    }
+    #results {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 8px;
+      background: #f0fdf4;
+      border: 1px solid #34d399;
+    }
+    #results h3 {
+      margin-top: 0;
+    }
+    #results a {
+      display: inline-block;
+      margin-top: 10px;
+      text-decoration: none;
+      background: #10b981;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+    }
+    #results a:hover {
+      background: #059669;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
   <script defer>
     document.addEventListener('DOMContentLoaded', () => {
       const WORKER_URL = 'https://sushi-harvester.mhardesty.workers.dev';
@@ -55,24 +132,28 @@
           console.error("Frontend error:", err);
           resultsDiv.style.display = 'block';
           resultsContent.innerHTML = `<h3>❌ Error</h3><pre>${err.message}</pre>`;
+        } finally {
+          progress.textContent = '';
         }
       });
     });
   </script>
 </head>
 <body>
-  <h1>SUSHI Data Harvester</h1>
-  <form id="harvestForm">
-    <label>Report Format: <select id="format"><option value="5">5</option><option value="5.1">5.1</option></select></label><br/>
-    <label>Report Type: <select id="reportType">
-      <option value="tr_j1">TR_J1</option><option value="tr_j2">TR_J2</option>
-    </select></label><br/>
-    <label>Begin Date: <input type="date" id="beginDate" required /></label>
-    <label>End Date: <input type="date" id="endDate" required /></label><br/>
-    <label>Accounts:<br/><textarea id="accounts" rows="5" cols="60" placeholder="email@domain,customer_id"></textarea></label><br/>
-    <button type="submit">Submit</button>
-  </form>
-  <div id="progress"></div>
-  <div id="results" style="display:none;"><div id="resultsContent"></div></div>
+  <div class="container">
+    <h1>SUSHI Data Harvester</h1>
+    <form id="harvestForm">
+      <label>Report Format: <select id="format"><option value="5">5</option><option value="5.1">5.1</option></select></label>
+      <label>Report Type: <select id="reportType">
+        <option value="tr_j1">TR_J1</option><option value="tr_j2">TR_J2</option>
+      </select></label>
+      <label>Begin Date: <input type="date" id="beginDate" required /></label>
+      <label>End Date: <input type="date" id="endDate" required /></label>
+      <label>Accounts:<br/><textarea id="accounts" rows="5" placeholder="email@domain,customer_id"></textarea></label>
+      <button type="submit">Submit</button>
+    </form>
+    <div id="progress"></div>
+    <div id="results" style="display:none;"><div id="resultsContent"></div></div>
+  </div>
 </body>
 </html>
