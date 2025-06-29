@@ -113,7 +113,7 @@
           const format = document.getElementById('format').value;
           const reportType = document.getElementById('reportType').value;
 
-          const accounts = accountsText.split('').map(line => {
+          const accounts = accountsText.split('\n').map(line => {
             const [requestor_id, customer_id] = line.split(',').map(v => v.trim());
             return { requestor_id, customer_id };
           }).filter(a => a.requestor_id && a.customer_id);
