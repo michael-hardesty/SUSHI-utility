@@ -86,6 +86,11 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
+    #progressDetails {
+      font-size: 0.9rem;
+      color: #333;
+      margin-top: 10px;
+    }
   </style>
   <script defer>
     document.addEventListener('DOMContentLoaded', () => {
@@ -94,11 +99,13 @@
       const resultsContent = document.getElementById('resultsContent');
       const resultsDiv = document.getElementById('results');
       const progress = document.getElementById('progress');
+      const progressDetails = document.getElementById('progressDetails');
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         resultsDiv.style.display = 'none';
         progress.textContent = 'Submitting...';
+        progressDetails.textContent = '';
 
         try {
           const accountsText = document.getElementById('accounts').value.trim();
@@ -106,15 +113,30 @@
           const format = document.getElementById('format').value;
           const reportType = document.getElementById('reportType').value;
 
-          const accounts = accountsText.split('\n').map(line => {
+          const accounts = accountsText.split('').map(line => {
             const [requestor_id, customer_id] = line.split(',').map(v => v.trim());
             return { requestor_id, customer_id };
           }).filter(a => a.requestor_id && a.customer_id);
 
+          let processed = 0;
+          const total = accounts.length;
+
           const payload = { accounts, begin_date: begin, end_date: end, format, report_type: reportType };
+
+          // Show simulated progress
+          const interval = setInterval(() => {
+            processed++;
+            if (processed >= total) processed = total;
+            progressDetails.textContent = `Processing ${processed} of ${total} accounts...`;
+          }, 500);
+
           const res = await fetch(`${WORKER_URL}/harvest-batch`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
           });
+
+          clearInterval(interval);
+          processed = total;
+          progressDetails.textContent = `Processing ${processed} of ${total} accounts...`;
 
           const result = await res.json();
           console.log("Server result:", result);
@@ -141,6 +163,7 @@
           resultsContent.innerHTML = `<h3>❌ Error</h3><pre>${err.message}</pre>`;
         } finally {
           progress.textContent = '';
+          progressDetails.textContent = '';
         }
       });
     });
