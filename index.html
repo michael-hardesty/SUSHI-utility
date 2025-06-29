@@ -92,7 +92,7 @@
       margin-top: 10px;
     }
   </style>
-  <script defer>
+<script defer>
     document.addEventListener('DOMContentLoaded', () => {
       const WORKER_URL = 'https://sushi-harvester.mhardesty.workers.dev';
       const form = document.getElementById('harvestForm');
@@ -113,9 +113,11 @@
           const format = document.getElementById('format').value;
           const reportType = document.getElementById('reportType').value;
 
-          const accounts = accountsText.split('\n').map(line => {
+          const accounts = accountsText.split('
+').map(line => {
             const [requestor_id, customer_id] = line.split(',').map(v => v.trim());
             return { requestor_id, customer_id };
+          });
           }).filter(a => a.requestor_id && a.customer_id);
 
           let processed = 0;
@@ -124,10 +126,16 @@
           const payload = { accounts, begin_date: begin, end_date: end, format, report_type: reportType };
 
           // Show simulated progress
+          let startTime = Date.now();
           const interval = setInterval(() => {
             processed++;
             if (processed >= total) processed = total;
-            progressDetails.textContent = `Processing ${processed} of ${total} accounts...`;
+            const elapsed = (Date.now() - startTime) / 1000; // in seconds
+            const rate = processed / elapsed;
+            const remaining = Math.max(0, total - processed);
+            const eta = rate > 0 ? Math.ceil(remaining / rate) : '?';
+            const etaText = eta !== '?' ? `${eta} sec remaining` : 'calculating...';
+            progressDetails.textContent = `Processing ${processed} of ${total} accounts... (${etaText})`;
           }, 500);
 
           const res = await fetch(`${WORKER_URL}/harvest-batch`, {
