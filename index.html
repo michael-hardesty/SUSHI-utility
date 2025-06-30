@@ -34,11 +34,27 @@
         font-weight: 400;
         font-style: italic;
     }
+    p.help {
+        color: #777;
+        font-weight: 400;
+        font-size: 12px;
+    }
     label {
       display: block;
       margin-top: 15px;
       font-weight: 600;
       color: #444;
+    }
+    .date-container {
+      display: flex;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .date-field {
+      flex: 1;
+    }
+    .date-field label {
+      margin-top: 0;
     }
     select, input[type="date"], textarea, button {
       width: 100%;
@@ -50,15 +66,16 @@
       box-sizing: border-box;
     }
     button {
-      background-color: #1C75BC;
-      color: white;
+      background-color: whitesmoke;
+      color: #1C75BC;
       font-weight: bold;
       margin-top: 20px;
       cursor: pointer;
       transition: background 0.3s;
     }
     button:hover {
-      background-color: #5a67d8;
+      background-color: #1C75BC;
+      color: whitesmoke;
     }
     #results {
       margin-top: 30px;
@@ -151,13 +168,19 @@
     <h1>PNAS Bulk COUNTER Data Harvester</h1>
     <p class="subhead">For the Subscriptions team to gather subscriber COUNTER usage data in bulk.</p>
     <form id="harvestForm">
-      <label>COUNTER Version: <select id="format"><option value="5">5</option><option value="5.1">5.1</option></select></label>
-      <label>Report Type: <select id="reportType">
+      <label>COUNTER Version <select id="format"><option value="5">5</option><option value="5.1">5.1</option></select></label>
+      <label>Report Type <select id="reportType">
         <option value="tr_j1">TR_J1</option><option value="tr_j2">TR_J2</option><option value="tr_j3">TR_J3</option><option value="tr_j4">TR_J4</option>
       </select></label>
-      <label>Begin Date: <input type="date" id="beginDate" required /></label>
-      <label>End Date: <input type="date" id="endDate" required /></label>
-      <label>Accounts:<br/><textarea id="accounts" rows="5" placeholder="requestor_id,customer_id"></textarea></label>
+      <div class="date-container">
+        <div class="date-field">
+            <label>Begin Date <input type="date" id="beginDate" required /></label>
+        </div>
+        <div class="date-field">
+            <label>End Date <input type="date" id="endDate" required /></label>
+        </div>
+      </div>
+      <label>Accounts<br/><p class="help">Add the admin's email address and PNAS ID in a comma-separated list below. Add a new row for each account.</p><textarea id="accounts" rows="5" placeholder="email address,PNAS ID"></textarea></label>
       <button type="submit">Submit</button>
     </form>
     <div id="progress"></div>
